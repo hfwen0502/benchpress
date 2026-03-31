@@ -131,3 +131,17 @@ def classify(circuit):
 - `benchpress/qpanda_gym/device_transpile/test_summit.py` — QPanda3 baseline
 - `results/plot_comparison.py` — Script to regenerate figures
 - `.benchmarks/Linux-CPython-3.11-64bit/` — Raw benchmark JSON data
+
+## Notes on QPanda3 Paper Claims
+
+The QPanda3 paper (Section 8, Compilation Efficiency) claims:
+
+- **Gate quality**: "for both 2Q Gate Count and 2Q Gate Depth, the majority of the scatter points are densely distributed along or very close to the [equal] line, suggesting that the performance of QPanda3 and qiskit is essentially the same."
+- **Compilation speed**: 7–597x speedup over Qiskit across topologies (all-to-all 7x avg, square 16x avg, heavy-hex 12x avg, linear 7x avg).
+
+Our benchmarks on heavy-hex (FakeTorino 133Q) show different results:
+
+1. **Gate quality is not "essentially the same"** — Qiskit produces 4–58% fewer 2Q gates in every circuit, and generally lower 2Q depth. QPanda3 trades gate quality for speed.
+2. **Speedup is much smaller on many-core servers** — We measure 4.8x (not 12x) on 160-core Intel SPR. The paper used Xeon Platinum 8336C (likely fewer cores); Qiskit's Rust SABRE routing scales with cores while QPanda3's C++ is single-threaded. On macOS ARM64 (8 cores) we see ~200x, consistent with their high-end claims.
+3. **The paper does not break down gate quality by category** — scatter plots aggregate all 1,066 Benchpress test cases across topologies. This can mask systematic deficits on structured algorithm circuits (QV, QFT, QAOA, Clifford, etc.) where Qiskit's optimization passes have more to work with.
+4. **The paper benchmarks with Qiskit 2.0.1** — we used Qiskit 2.3.1, which includes further Rust optimizations.
