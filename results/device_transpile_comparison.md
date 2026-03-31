@@ -9,20 +9,20 @@
 - **Basis gates**: cz, id, rz, sx, x
 - **Platform**: macOS ARM64, Python 3.13.5
 
-## Results
+## Results (v2 — reduced VF2 call limit for parameterized circuits)
 
 | Circuit | Strategy | Baseline Time | Adaptive Time | Speedup | Baseline 2Q Gates | Adaptive 2Q Gates | Gate Δ | Baseline 2Q Depth | Adaptive 2Q Depth |
 |---------|----------|---------------|---------------|---------|-------------------|-------------------|--------|-------------------|-------------------|
 | BVlike | star | 0.08s | 0.10s | 0.8x | 0 | 0 | N/A | 0 | 0 |
-| circSU2_100 | parameterized | 1.87s | 1.25s | 1.5x | 300 | 336 | +12.0% | 300 | 336 |
-| BV_100 | star | 1.94s | 1.99s | 1.0x | 519 | 501 | -3.5% | 404 | 393 |
-| sq_heisenberg_100 | default | 3.04s | 3.05s | 1.0x | 1,464 | 1,347 | -8.0% | 339 | 387 |
-| QAOA_100 | default | 11.60s | 11.99s | 1.0x | 8,547 | 8,433 | -1.3% | 1,725 | 1,998 |
-| QFT_100 | default | 19.14s | 25.45s | 0.75x | 11,841 | 11,597 | -2.1% | 2,778 | 2,702 |
-| **clifford_100** | **clifford** | **83.83s** | **16.84s** | **5.0x** | **65,284** | **28,368** | **-56.5%** | **19,783** | **657** |
-| **circSU2_89** | **parameterized** | **99.65s** | **1.17s** | **85.1x** | 354 | 354 | 0.0% | 348 | 348 |
-| QV_100 | default | 126.48s | 118.38s | 1.1x | 97,380 | 97,395 | 0.0% | 9,909 | 10,323 |
-| **Total** | | **17m33s** | **9m19s** | **1.9x** | | | | | |
+| circSU2_100 | parameterized | 1.87s | 1.92s | 1.0x | 300 | 300 | 0.0% | 300 | 300 |
+| BV_100 | star | 1.94s | 2.05s | 0.9x | 519 | 505 | -2.7% | 404 | 397 |
+| sq_heisenberg_100 | default | 3.04s | 3.32s | 0.9x | 1,464 | 1,452 | -0.8% | 339 | 372 |
+| **circSU2_89** | **parameterized** | **99.65s** | **4.25s** | **23.5x** | 354 | 342 | -3.4% | 348 | 330 |
+| QAOA_100 | default | 11.60s | 11.88s | 1.0x | 8,547 | 8,349 | -2.3% | 1,725 | 1,665 |
+| QFT_100 | default | 19.14s | 19.77s | 1.0x | 11,841 | 11,647 | -1.6% | 2,778 | 2,699 |
+| **clifford_100** | **clifford** | **83.83s** | **17.27s** | **4.9x** | **65,284** | **28,368** | **-56.5%** | **19,783** | **657** |
+| QV_100 | default | 126.48s | 122.37s | 1.0x | 97,380 | 97,827 | +0.5% | 9,909 | 10,476 |
+| **Total** | | **5m48s** | **3m03s** | **1.9x** | | | | | |
 
 ## Strategies
 
@@ -57,17 +57,32 @@ pm = generate_preset_pass_manager(2, backend)
 result = pm.run(circuit)
 ```
 
-### 2. `parameterized` — Skip VF2Layout for parameterized circuits
+### 2. `parameterized` — Reduce VF2Layout call limit for parameterized circuits
 
 **Applied to**: Circuits with unbound parameters (e.g., EfficientSU2, variational ansatze).
 
-**What it does**: Uses `layout_method="sabre"` instead of the default VF2Layout → SabreLayout fallback.
+**What it does**: Uses the default pass manager but reduces VF2Layout's `call_limit` from `(5_000_000, 10_000)` to `(100_000, 500)`.
 
-**Why it works**: At optimization level 2, the default pipeline tries VF2Layout first (exact subgraph isomorphism, up to 5M calls and 10K trials). For parameterized circuits like EfficientSU2 with circular entanglement on 89 qubits, VF2Layout **cannot find an isomorphic subgraph** in FakeTorino's heavy-hex topology — it exhausts all trials (~98 seconds) before falling back to SabreLayout anyway. Skipping directly to SabreLayout avoids this wasted search.
+**Why it works**: At optimization level 2, the default pipeline tries VF2Layout first (exact subgraph isomorphism). For parameterized circuits like EfficientSU2 with circular entanglement on 89 qubits, VF2Layout **cannot find an isomorphic subgraph** in FakeTorino's heavy-hex topology — it exhausts all trials (~98 seconds) before falling back to SabreLayout anyway. Reducing the call limit lets VF2 succeed quickly when it can (~2s for 100Q) while failing fast when it can't (~4s for 89Q), preserving gate quality.
+
+**v1 approach** (skip VF2 entirely with `layout_method="sabre"`) caused a +12% gate regression on circSU2_100 because VF2PostLayout finds a better layout for 100Q. The v2 approach keeps VF2 in the pipeline with a tighter budget.
 
 **Custom pass manager**:
 ```python
-pm = generate_preset_pass_manager(2, backend, layout_method="sabre")
+from qiskit.transpiler.passes import VF2Layout
+
+pm = generate_preset_pass_manager(2, backend)
+# Reduce VF2Layout call limit: try briefly, fall back to SABRE fast
+for task in pm.layout._tasks:
+    if isinstance(task, list):
+        for item in task:
+            passes = getattr(item, 'passes', None)
+            if passes is not None:
+                if callable(passes):
+                    passes = passes()
+                for p in passes:
+                    if isinstance(p, VF2Layout):
+                        p.call_limit = (100_000, 500)
 result = pm.run(circuit)
 ```
 
@@ -114,12 +129,13 @@ def classify(circuit):
 
 ## Known Issues
 
-- **circSU2_100**: +12% gate count regression. The `layout_method="sabre"` bypasses VF2PostLayout which can find better final layouts. VF2 succeeds quickly for 100Q (within the device) but not for 89Q. A fix would be to only skip VF2 when `num_qubits > backend_num_qubits * threshold`.
-- **QFT_100**: 0.75x slower in this run. Classified as `default` (same PM as baseline). Likely benchmark variance from single-round measurement.
+- **circSU2_89**: 4.25s vs 1.17s in v1 (which used `layout_method="sabre"`). The v2 approach keeps VF2Layout with a reduced call limit, so VF2 spends ~3s trying before falling back to SABRE. This is a tradeoff: v1 was 85x faster than baseline but had +12% gate regression on circSU2_100; v2 is 23.5x faster with 0% regression on circSU2_100.
+- **QV_100**: 122s, dominates the total suite time. Classified as `default` (no custom strategy). The bottleneck is routing 97K+ 2Q gates on heavy-hex topology — inherently expensive.
 
 ## Files
 
 - `benchpress/qiskit_gym/device_transpile/test_summit.py` — Baseline (unmodified Qiskit default)
 - `benchpress/qiskit_gym/device_transpile/test_summit_adaptive.py` — Adaptive pass manager
 - `.benchmarks/Darwin-CPython-3.13-64bit/0003_qiskit_device_baseline.json` — Baseline results
-- `.benchmarks/Darwin-CPython-3.13-64bit/0005_qiskit_device_adaptive.json` — Adaptive results
+- `.benchmarks/Darwin-CPython-3.13-64bit/0005_qiskit_device_adaptive.json` — Adaptive v1 results (layout_method="sabre" for parameterized)
+- `.benchmarks/Darwin-CPython-3.13-64bit/0006_0006_qiskit_device_adaptive_v2.json` — Adaptive v2 results (reduced VF2 call limit)

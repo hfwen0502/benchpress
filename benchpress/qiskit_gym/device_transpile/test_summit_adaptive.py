@@ -11,6 +11,7 @@ from qiskit import QuantumCircuit
 from qiskit.circuit.library import EfficientSU2, QuantumVolume
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
+from qiskit.transpiler.passes import VF2Layout
 from qiskit.transpiler.passes.optimization.collect_cliffords import CollectCliffords
 from qiskit.transpiler.passes.routing.star_prerouting import StarPreRouting
 from qiskit.transpiler.passes.synthesis.high_level_synthesis import (
@@ -94,10 +95,26 @@ def _make_default_pm():
 
 
 def _make_parameterized_pm():
-    """Skip VF2Layout — go straight to SabreLayout."""
-    return generate_preset_pass_manager(
-        OPTIMIZATION_LEVEL, BACKEND, layout_method="sabre"
-    )
+    """Reduce VF2Layout call limit so it tries briefly then falls back to SABRE.
+
+    Default level-2 VF2Layout uses call_limit=(5_000_000, 10_000) which can
+    take ~98s to exhaust on circuits where VF2 cannot find a subgraph
+    isomorphism (e.g. 89Q circular entanglement on 133Q heavy-hex).
+    Reducing to (100_000, 500) lets VF2 succeed quickly when it can (~2s for
+    100Q) while failing fast when it can't (~4s for 89Q).
+    """
+    pm = generate_preset_pass_manager(OPTIMIZATION_LEVEL, BACKEND)
+    for task in pm.layout._tasks:
+        if isinstance(task, list):
+            for item in task:
+                passes = getattr(item, 'passes', None)
+                if passes is not None:
+                    if callable(passes):
+                        passes = passes()
+                    for p in passes:
+                        if isinstance(p, VF2Layout):
+                            p.call_limit = (100_000, 500)
+    return pm
 
 
 def _make_star_pm():
