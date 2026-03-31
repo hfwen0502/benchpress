@@ -5,7 +5,7 @@
 - **Qiskit version**: 2.3.1 (`optimization_level=2`)
 - **QPanda3 version**: 0.3.4 (`optimization_level=2`)
 - **Backend**: FakeTorino (133-qubit IBM Heron, heavy-hex topology)
-- **Qiskit Adaptive**: Circuit-aware pass manager selection (see Strategies below)
+- **Qiskit Adaptive**: Circuit-aware pass manager that classifies each circuit and applies a tailored transpilation strategy (e.g., LNN Clifford resynthesis, reduced VF2Layout limits, StarPreRouting). Details in [Adaptive Strategies](#adaptive-strategies) below.
 - **Basis gates**: Qiskit: cz, id, rz, sx, x | QPanda3: CZ, RZ, X1
 - **Platform**: Linux x86_64, Intel Xeon Sapphire Rapids 160 vCPUs, Python 3.11.11
 - **Measurement**: Runs executed sequentially (no overlap) for clean measurements
