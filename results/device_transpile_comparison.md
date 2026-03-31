@@ -101,6 +101,18 @@ result = pm.run(circuit)
 
 ### Circuit Classification
 
+| Circuit | Classification | Strategy |
+|---------|---------------|----------|
+| BVlike_simplification | default | Standard level 2 |
+| BV_100 | star | StarPreRouting (hub qubit has >60% of 2Q gates) |
+| circSU2_89 | parameterized | Reduced VF2Layout call_limit (100K, 500) |
+| circSU2_100 | parameterized | Reduced VF2Layout call_limit (100K, 500) |
+| square_heisenberg_100 | default | Standard level 2 |
+| QAOA_100 | parameterized | Reduced VF2Layout call_limit (100K, 500) |
+| QFT_100 | default | Standard level 2 |
+| clifford_100 | clifford | LNN resynthesis + decompose |
+| QV_100 | default | Standard level 2 |
+
 ```python
 def classify(circuit):
     if circuit.num_parameters > 0:

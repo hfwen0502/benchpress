@@ -2,7 +2,7 @@
 
 Circuit categories:
 1. Dense Clifford   → CollectCliffords + LNN resynthesis before routing
-2. Parameterized    → Skip VF2Layout (it exhausts trials), go straight to SabreLayout
+2. Parameterized    → Reduce VF2Layout call_limit (100K, 500) to fail fast
 3. Star topology    → StarPreRouting before SABRE
 4. Default          → Standard level 2 pass manager
 """
