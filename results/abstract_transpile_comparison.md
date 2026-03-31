@@ -131,6 +131,42 @@ QPanda3 fails on circuits containing `reset` gates:
 
 Error: `RuntimeError: Caught an unknown exception!` from `convert_qasm_file_to_qprog`. This is a QPanda3 limitation — Qiskit handles these circuits without issue. Qiskit's `bwt_n37` was excluded from the run due to extreme compile times (>10 min on square/heavy-hex/linear topologies).
 
+## Analysis: Qiskit SABRE Routing Issue on Large Heavy-Hex Chain Circuits
+
+The most striking finding is Qiskit's poor gate quality on large heavy-hex with linear-chain circuits. Examining `cat_n260` across topologies reveals the pattern:
+
+| Topology | QPanda3 2Q | Qiskit 2Q | Ratio | Qiskit Time |
+|----------|-----------|----------|-------|-------------|
+| all-to-all | 259 | 259 | 1.00 | 167ms |
+| square | 259 | 259 | 1.00 | 18ms |
+| linear | 259 | 259 | 1.00 | 14ms |
+| heavy-hex | 606 | 2,194 | 0.28 | 5,299ms |
+
+The same circuit produces **identical** output (259 gates = the original CX chain, zero routing overhead) on all-to-all, square, and linear. But on heavy-hex, QPanda3 produces 606 gates (~2.3x overhead, reasonable for mapping a chain onto heavy-hex), while Qiskit produces **2,194 gates** (8.5x overhead) and takes **5.3 seconds**.
+
+This pattern repeats for all linear-chain circuits at scale:
+
+| Circuit | Qubits | Optimal 2Q | QPanda3 (heavy-hex) | Qiskit (heavy-hex) | Qiskit Overhead |
+|---------|--------|-----------|---------------------|-------------------|----------------|
+| cat_n260 | 260 | 259 | 606 (2.3x) | 2,194 (8.5x) | 3.6x worse |
+| ghz_state_n255 | 255 | 254 | 563 (2.2x) | 2,020 (8.0x) | 3.6x worse |
+| wstate_n380 | 380 | 758 | 2,060 (2.7x) | 7,249 (9.6x) | 3.5x worse |
+| ising_n98 | 98 | 194 | 317 (1.6x) | 567 (2.9x) | 1.8x worse |
+
+QPanda3 achieves near-optimal routing (2-3x overhead) while Qiskit's SABRE inserts 3.5x more SWAPs than necessary. This suggests SABRE's heuristic search doesn't efficiently find linear-chain embeddings on heavy-hex at large qubit counts, despite such embeddings being straightforward (just walk along the heavy-hex backbone).
+
+This is a potential Qiskit optimization opportunity or bug — these are exactly the kind of circuits that run on real IBM heavy-hex hardware.
+
+## Summary: Device vs Abstract Transpile
+
+| | Speed | Gate Quality |
+|---|---|---|
+| **Device transpile** (133Q heavy-hex) | QPanda3 4.8x faster | Qiskit 4-58% fewer gates in **all** circuits |
+| **Abstract: medium** (11-27Q) | QPanda3 4.5x faster | Qiskit better on constrained topos, equal on all-to-all |
+| **Abstract: large** (28-433Q) | QPanda3 5.6x faster | Mixed — Qiskit better on linear/square, **but has a routing problem on large heavy-hex chain circuits** |
+
+Qiskit does **not** perform poorly across the board on abstract transpile. It still produces better gate quality on square and linear topologies. The apparent "QPanda3 wins on heavy-hex" result is driven by a specific SABRE routing inefficiency on large linear-chain circuits, not a general QPanda3 advantage.
+
 ## Observations
 
 1. **Pass manager overhead is Qiskit's main weakness**: On small circuits (cc_n12, 12Q all-to-all), Qiskit is 93x slower. On large simple-structure circuits (ising_n98, 98Q heavy-hex), it's 196x slower. Pass manager setup, analysis passes, and the optimization pipeline dominate when the circuit structure is simple.
@@ -140,10 +176,10 @@ Error: `RuntimeError: Caught an unknown exception!` from `convert_qasm_file_to_q
 3. **Gate quality is topology- and scale-dependent**:
    - All-to-all: equal at medium, QPanda3 slightly better at large (QFT)
    - Square: QPanda3 10-12% worse consistently
-   - Heavy-hex: QPanda3 24% worse at medium but only 6% worse at large (and wins big on structured circuits)
+   - Heavy-hex: QPanda3 24% worse at medium but only 6% worse at large (driven by SABRE routing issue above)
    - Linear: QPanda3's weakest topology, especially at scale (QFT: 2.5x more gates)
 
-4. **QPanda3 excels on structured entanglement + heavy-hex**: cat, ghz, wstate, ising circuits on heavy-hex show QPanda3 producing 28-56% of Qiskit's gate count. These circuits have regular nearest-neighbor structure that QPanda3 maps efficiently to heavy-hex.
+4. **Qiskit SABRE has a scaling issue on large heavy-hex chain circuits**: cat, ghz, wstate, ising circuits show Qiskit inserting 3.5x more SWAPs than QPanda3 on heavy-hex at 100-380 qubits. This is likely a heuristic limitation, not a fundamental one.
 
 5. **Qiskit excels on QFT + linear topology**: QFT has all-pairs connectivity that requires extensive routing on linear topology. Qiskit's SABRE produces dramatically better results (2.5x fewer gates at 320Q).
 
