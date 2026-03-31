@@ -1,5 +1,9 @@
 # Abstract Transpile: QPanda3 vs Qiskit Benchmark Comparison
 
+## Key Finding: Qiskit SABRE Routing Issue on Large Heavy-Hex
+
+Qiskit's SABRE router inserts **3.5x more SWAPs than necessary** on linear-chain circuits (cat, ghz, wstate, ising) at 100–380 qubits on heavy-hex topology. For example, `cat_n260` on heavy-hex: QPanda3 produces 606 2Q gates (2.3x optimal), Qiskit produces 2,194 (8.5x optimal) and takes 5.3s. The same circuit compiles optimally on all other topologies for both compilers. This is the most practically relevant finding since heavy-hex is IBM's production topology. See [detailed analysis](#analysis-qiskit-sabre-routing-issue-on-large-heavy-hex-chain-circuits) below.
+
 ## Setup
 
 - **Qiskit version**: 2.3.1 (`optimization_level=2`)
