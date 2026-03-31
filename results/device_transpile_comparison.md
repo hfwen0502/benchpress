@@ -1,15 +1,42 @@
-# Device Transpile: Adaptive Pass Manager vs Qiskit Default
+# Device Transpile: Qiskit vs QPanda3 Benchmark Comparison
 
 ## Setup
 
-- **Qiskit version**: 2.3.1
+- **Qiskit version**: 2.3.1 (`optimization_level=2`)
+- **QPanda3 version**: 0.3.4 (`optimization_level=2`)
 - **Backend**: FakeTorino (133-qubit IBM Heron, heavy-hex topology)
-- **Baseline**: `optimization_level=2`, default pass manager
-- **Adaptive**: Circuit-aware pass manager selection (see Strategies below)
-- **Basis gates**: cz, id, rz, sx, x
-- **Platform**: macOS ARM64, Python 3.13.5
+- **Qiskit Adaptive**: Circuit-aware pass manager selection (see Strategies below)
+- **Basis gates**: Qiskit: cz, id, rz, sx, x | QPanda3: CZ, RZ, X1
+- **Platforms**:
+  - macOS ARM64 (Apple Silicon), Python 3.13.5
+  - Linux x86_64, Intel Xeon Sapphire Rapids 160 vCPUs, Python 3.11.11
 
-## Results (v2 — reduced VF2 call limit for parameterized circuits)
+## Results — Intel Sapphire Rapids Server (160 vCPUs)
+
+Runs executed sequentially (no overlap) for clean measurements.
+
+| Circuit | Qiskit Default | Qiskit Adaptive | QPanda3 | Adapt vs Default | QPanda3 vs Default | Qiskit 2Q | Adaptive 2Q | QPanda3 2Q |
+|---------|---------------|----------------|---------|-----------------|-------------------|-----------|------------|------------|
+| BVlike | 3.6ms | 6.6ms | 6.3ms | 0.5x | 0.6x | 0 | 0 | 0 |
+| BV_100 | 51.5ms | 56.0ms | 12.7ms | 0.9x | 4.1x | 519 | 501 | 554 |
+| circSU2_100 | 59.7ms | 61.9ms | 18.8ms | 1.0x | 3.2x | 300 | 300 | 716 |
+| sq_heisenberg_100 | 80.9ms | 76.7ms | 42.2ms | 1.1x | 1.9x | 1,455 | 1,386 | 2,139 |
+| QAOA_100 | 217.7ms | 212.7ms | 61.0ms | 1.0x | 3.6x | 8,358 | 8,499 | 9,592 |
+| QFT_100 | 372.6ms | 379.0ms | 135.4ms | 1.0x | 2.8x | 12,194 | 11,970 | 14,040 |
+| **clifford_100** | 1,341.4ms | **651.7ms** | 454.5ms | **2.1x** | 3.0x | 65,685 | **28,368** | 68,747 |
+| QV_100 | 2,434.0ms | 2,504.8ms | 795.0ms | 1.0x | 3.1x | 97,431 | 97,377 | 104,244 |
+| **circSU2_89** | 2,791.6ms | **127.9ms** | 17.2ms | **21.8x** | 162.0x | 354 | 342 | 637 |
+| **Total** | **7.35s** | **4.08s** | **1.54s** | **1.8x** | **4.8x** | | | |
+
+### Key Observations (Server)
+
+1. **Qiskit Adaptive closes the gap**: from 4.8x (default) to **2.6x** (adaptive) behind QPanda3.
+2. **Qiskit produces fewer 2Q gates in every circuit** — 4% to 58% fewer than QPanda3.
+3. **clifford_100**: Adaptive LNN resynthesis cuts 2Q gates from 65,685 to 28,368 (-57%), beating QPanda3's 68,747 while being only 1.4x slower.
+4. **circSU2_89**: Reduced VF2 call limit cuts time from 2.79s to 0.13s (21.8x), closing the QPanda3 gap from 162x to 7.4x.
+5. QPanda3 trades gate quality for compilation speed. For NISQ devices where gate errors dominate, Qiskit's lower gate count means higher circuit fidelity.
+
+## Results — macOS ARM64 (Qiskit Adaptive vs Default)
 
 | Circuit | Strategy | Baseline Time | Adaptive Time | Speedup | Baseline 2Q Gates | Adaptive 2Q Gates | Gate Δ | Baseline 2Q Depth | Adaptive 2Q Depth |
 |---------|----------|---------------|---------------|---------|-------------------|-------------------|--------|-------------------|-------------------|
@@ -23,6 +50,40 @@
 | **clifford_100** | **clifford** | **83.83s** | **17.27s** | **4.9x** | **65,284** | **28,368** | **-56.5%** | **19,783** | **657** |
 | QV_100 | default | 126.48s | 122.37s | 1.0x | 97,380 | 97,827 | +0.5% | 9,909 | 10,476 |
 | **Total** | | **5m48s** | **3m03s** | **1.9x** | | | | | |
+
+## Cross-Platform Scaling
+
+| | macOS ARM64 | Intel SPR (160 vCPUs) | Server Speedup |
+|---|---|---|---|
+| Qiskit QV_100 | 122.4s | 2.4s | **51x** |
+| QPanda3 QV_100 | 0.53s | 0.80s | 0.7x (slower) |
+| QPanda3/Qiskit ratio | 223x | 3.1x | |
+| Qiskit total (9 circuits) | 347.6s | 7.35s | **47x** |
+| QPanda3 total (9 circuits) | 1.04s | 1.54s | 0.7x (slower) |
+| QPanda3/Qiskit ratio | 334x | 4.8x | |
+
+**Why the gap narrows**: Qiskit's Rust SABRE routing runs multi-threaded layout
+trials that scale with core count. QPanda3 is single-threaded C++ — it doesn't
+benefit from more cores and is actually slower on the server due to lower
+single-core frequency (Xeon vs Apple Silicon).
+
+## QV_100 Profiling (Intel SPR Server)
+
+### Qiskit (2.2s total)
+| Component | Time | % |
+|-----------|------|---|
+| sabre_layout_and_routing (Rust) | 0.53s | 24% |
+| unitary_synthesis (Rust) | 0.40s | 18% |
+| commutative_cancellation (Rust) | 0.34s | 16% |
+| consolidate_blocks (Rust) | 0.24s | 11% |
+| optimize_1q_decomposition (Rust) | 0.24s | 11% |
+| depth analysis | 0.13s | 6% |
+| basis_translator (Rust) | 0.11s | 5% |
+| Other | 0.21s | 9% |
+
+### QPanda3 (0.78s total)
+Single monolithic C++ call — no Python-visible breakdown. All routing,
+optimization, and basis translation happen inside one `transpile()` call.
 
 ## Strategies
 
@@ -129,13 +190,17 @@ def classify(circuit):
 
 ## Known Issues
 
-- **circSU2_89**: 4.25s vs 1.17s in v1 (which used `layout_method="sabre"`). The v2 approach keeps VF2Layout with a reduced call limit, so VF2 spends ~3s trying before falling back to SABRE. This is a tradeoff: v1 was 85x faster than baseline but had +12% gate regression on circSU2_100; v2 is 23.5x faster with 0% regression on circSU2_100.
-- **QV_100**: 122s, dominates the total suite time. Classified as `default` (no custom strategy). The bottleneck is routing 97K+ 2Q gates on heavy-hex topology — inherently expensive.
+- **circSU2_89 (Qiskit)**: 4.25s on Mac vs 1.17s in v1 (which used `layout_method="sabre"`). The v2 approach keeps VF2Layout with a reduced call limit, so VF2 spends ~3s trying before falling back to SABRE. On the server this is 2.79s. This is a tradeoff: v1 was 85x faster than baseline but had +12% gate regression on circSU2_100; v2 is 23.5x faster with 0% regression on circSU2_100.
+- **QPanda3 gate quality**: QPanda3 produces 4-58% more 2Q gates than Qiskit across all circuits. This suggests less aggressive optimization or a simpler routing algorithm.
 
 ## Files
 
-- `benchpress/qiskit_gym/device_transpile/test_summit.py` — Baseline (unmodified Qiskit default)
-- `benchpress/qiskit_gym/device_transpile/test_summit_adaptive.py` — Adaptive pass manager
-- `.benchmarks/Darwin-CPython-3.13-64bit/0003_qiskit_device_baseline.json` — Baseline results
-- `.benchmarks/Darwin-CPython-3.13-64bit/0005_qiskit_device_adaptive.json` — Adaptive v1 results (layout_method="sabre" for parameterized)
-- `.benchmarks/Darwin-CPython-3.13-64bit/0006_0006_qiskit_device_adaptive_v2.json` — Adaptive v2 results (reduced VF2 call limit)
+- `benchpress/qiskit_gym/device_transpile/test_summit.py` — Qiskit baseline (unmodified default)
+- `benchpress/qiskit_gym/device_transpile/test_summit_adaptive.py` — Qiskit adaptive pass manager
+- `benchpress/qpanda_gym/device_transpile/test_summit.py` — QPanda3 baseline
+- `.benchmarks/Darwin-CPython-3.13-64bit/0003_qiskit_device_baseline.json` — Qiskit Mac baseline
+- `.benchmarks/Darwin-CPython-3.13-64bit/0005_qiskit_device_adaptive.json` — Qiskit Mac adaptive v1
+- `.benchmarks/Darwin-CPython-3.13-64bit/0006_0006_qiskit_device_adaptive_v2.json` — Qiskit Mac adaptive v2
+- `.benchmarks/Linux-CPython-3.11-64bit/0004_server_qpanda_clean.json` — QPanda3 server results
+- `.benchmarks/Linux-CPython-3.11-64bit/0005_server_qiskit_baseline_clean.json` — Qiskit server baseline results
+- `.benchmarks/Linux-CPython-3.11-64bit/0006_server_qiskit_adaptive.json` — Qiskit server adaptive results

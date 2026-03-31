@@ -1,0 +1,757 @@
+{
+    "machine_info": {
+        "node": "hf-dev-worker-1-0",
+        "processor": "x86_64",
+        "machine": "x86_64",
+        "python_compiler": "GCC 11.5.0 20240719 (Red Hat 11.5.0-5)",
+        "python_implementation": "CPython",
+        "python_implementation_version": "3.11.11",
+        "python_version": "3.11.11",
+        "python_build": [
+            "main",
+            "Jan 23 2026 00:00:00"
+        ],
+        "release": "5.14.0-570.81.1.el9_6.x86_64",
+        "system": "Linux",
+        "cpu": {
+            "python_version": "3.11.11.final.0 (64 bit)",
+            "cpuinfo_version": [
+                9,
+                0,
+                0
+            ],
+            "cpuinfo_version_string": "9.0.0",
+            "arch": "X86_64",
+            "bits": 64,
+            "count": 160,
+            "arch_string_raw": "x86_64",
+            "vendor_id_raw": "GenuineIntel",
+            "brand_raw": "Intel Xeon Processor (SapphireRapids)",
+            "hz_advertised_friendly": "2.1000 GHz",
+            "hz_actual_friendly": "2.1000 GHz",
+            "hz_advertised": [
+                2100000000,
+                0
+            ],
+            "hz_actual": [
+                2100000000,
+                0
+            ],
+            "stepping": 4,
+            "model": 143,
+            "family": 6,
+            "flags": [
+                "3dnowprefetch",
+                "abm",
+                "adx",
+                "aes",
+                "amx_bf16",
+                "amx_int8",
+                "amx_tile",
+                "apic",
+                "arat",
+                "arch_capabilities",
+                "avx",
+                "avx2",
+                "avx512_bf16",
+                "avx512_bitalg",
+                "avx512_fp16",
+                "avx512_vbmi2",
+                "avx512_vnni",
+                "avx512_vpopcntdq",
+                "avx512bitalg",
+                "avx512bw",
+                "avx512cd",
+                "avx512dq",
+                "avx512f",
+                "avx512ifma",
+                "avx512vbmi",
+                "avx512vbmi2",
+                "avx512vl",
+                "avx512vnni",
+                "avx512vpopcntdq",
+                "avx_vnni",
+                "bmi1",
+                "bmi2",
+                "bus_lock_detect",
+                "cldemote",
+                "clflush",
+                "clflushopt",
+                "clwb",
+                "cmov",
+                "constant_tsc",
+                "cpuid",
+                "cpuid_fault",
+                "cx16",
+                "cx8",
+                "de",
+                "ept",
+                "ept_ad",
+                "erms",
+                "f16c",
+                "flexpriority",
+                "fma",
+                "fpu",
+                "fsgsbase",
+                "fsrm",
+                "fxsr",
+                "gfni",
+                "ht",
+                "hypervisor",
+                "ibpb",
+                "ibrs",
+                "ibrs_enhanced",
+                "invpcid",
+                "la57",
+                "lahf_lm",
+                "lm",
+                "mca",
+                "mce",
+                "md_clear",
+                "mmx",
+                "movbe",
+                "movdir64b",
+                "movdiri",
+                "msr",
+                "mtrr",
+                "nopl",
+                "nx",
+                "ospke",
+                "osxsave",
+                "pae",
+                "pat",
+                "pcid",
+                "pclmulqdq",
+                "pdpe1gb",
+                "pge",
+                "pku",
+                "pni",
+                "popcnt",
+                "pse",
+                "pse36",
+                "rdpid",
+                "rdrand",
+                "rdrnd",
+                "rdseed",
+                "rdtscp",
+                "rep_good",
+                "sep",
+                "serialize",
+                "sha",
+                "sha_ni",
+                "smap",
+                "smep",
+                "ss",
+                "ssbd",
+                "sse",
+                "sse2",
+                "sse4_1",
+                "sse4_2",
+                "ssse3",
+                "stibp",
+                "syscall",
+                "tpr_shadow",
+                "tsc",
+                "tsc_adjust",
+                "tsc_deadline_timer",
+                "tsc_known_freq",
+                "tscdeadline",
+                "tsxldtrk",
+                "umip",
+                "vaes",
+                "vme",
+                "vmx",
+                "vnmi",
+                "vpclmulqdq",
+                "vpid",
+                "waitpkg",
+                "wbnoinvd",
+                "x2apic",
+                "xgetbv1",
+                "xsave",
+                "xsavec",
+                "xsaveopt",
+                "xsaves",
+                "xtopology"
+            ],
+            "l3_cache_size": 16777216,
+            "l2_cache_size": 335544320,
+            "l1_data_cache_size": 5242880,
+            "l1_instruction_cache_size": 5242880,
+            "l2_cache_line_size": 512,
+            "l2_cache_associativity": 8
+        }
+    },
+    "commit_info": {
+        "id": "2e77d09881248ea424cc739ab438b144bd5fb834",
+        "time": "2026-03-31T13:44:00-04:00",
+        "author_time": "2026-03-31T13:44:00-04:00",
+        "dirty": false,
+        "project": "benchpress",
+        "branch": "adaptive-transpile"
+    },
+    "benchmarks": [
+        {
+            "group": "Transpile - Device",
+            "name": "test_QFT_100_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_QFT_100_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "qasm_load_time": 0.16760114417411387,
+                "input_num_qubits": 100,
+                "output_num_qubits": 103,
+                "output_circuit_operations": {
+                    "X1": 4848,
+                    "CZ": 14040,
+                    "RX": 24478,
+                    "RZ": 56694
+                },
+                "output_gate_count_2q": 14040,
+                "output_depth_2q": 3364
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.12856011209078133,
+                "max": 0.13934187195263803,
+                "mean": 0.13539637685088174,
+                "stddev": 0.004139596336791004,
+                "rounds": 7,
+                "median": 0.1377014210447669,
+                "iqr": 0.0064653652952983975,
+                "q1": 0.1320325176930055,
+                "q3": 0.1384978829883039,
+                "iqr_outliers": 0,
+                "stddev_outliers": 1,
+                "outliers": "1;0",
+                "ld15iqr": 0.12856011209078133,
+                "hd15iqr": 0.13934187195263803,
+                "ops": 7.3857220057029,
+                "total": 0.9477746379561722,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_QV_100_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_QV_100_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "output_num_qubits": 103,
+                "output_circuit_operations": {
+                    "RX": 172764,
+                    "CZ": 104244,
+                    "X1": 57632,
+                    "RZ": 431976
+                },
+                "output_gate_count_2q": 104244,
+                "output_depth_2q": 14385
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.7693837299011648,
+                "max": 0.820526426890865,
+                "mean": 0.7949550783960149,
+                "stddev": 0.03616334784958584,
+                "rounds": 2,
+                "median": 0.7949550783960149,
+                "iqr": 0.0511426969897002,
+                "q1": 0.7693837299011648,
+                "q3": 0.820526426890865,
+                "iqr_outliers": 0,
+                "stddev_outliers": 0,
+                "outliers": "0;0",
+                "ld15iqr": 0.7693837299011648,
+                "hd15iqr": 0.820526426890865,
+                "ops": 1.2579327149122757,
+                "total": 1.5899101567920297,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_circSU2_89_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_circSU2_89_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "input_num_qubits": 89,
+                "output_num_qubits": 89,
+                "output_circuit_operations": {
+                    "RX": 955,
+                    "CZ": 637,
+                    "X1": 722,
+                    "RZ": 3018
+                },
+                "output_gate_count_2q": 637,
+                "output_depth_2q": 533
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.01624220609664917,
+                "max": 0.020037861075252295,
+                "mean": 0.017227586227553812,
+                "stddev": 0.0006560457690447017,
+                "rounds": 55,
+                "median": 0.016986776841804385,
+                "iqr": 0.0007455273880623281,
+                "q1": 0.016800676356069744,
+                "q3": 0.01754620374413207,
+                "iqr_outliers": 2,
+                "stddev_outliers": 11,
+                "outliers": "11;2",
+                "ld15iqr": 0.01624220609664917,
+                "hd15iqr": 0.018796500051394105,
+                "ops": 58.046437080117435,
+                "total": 0.9475172425154597,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_circSU2_100_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_circSU2_100_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "input_num_qubits": 100,
+                "output_num_qubits": 100,
+                "output_circuit_operations": {
+                    "RX": 1070,
+                    "CZ": 716,
+                    "X1": 826,
+                    "RZ": 3405
+                },
+                "output_gate_count_2q": 716,
+                "output_depth_2q": 594
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.018118861131370068,
+                "max": 0.019604919012635946,
+                "mean": 0.018771570606403193,
+                "stddev": 0.0003491550300204362,
+                "rounds": 53,
+                "median": 0.018667350988835096,
+                "iqr": 0.00020442745881155133,
+                "q1": 0.018588839331641793,
+                "q3": 0.018793266790453345,
+                "iqr_outliers": 13,
+                "stddev_outliers": 13,
+                "outliers": "13;13",
+                "ld15iqr": 0.018446475034579635,
+                "hd15iqr": 0.019209661055356264,
+                "ops": 53.27204744705213,
+                "total": 0.9948932421393692,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_BV_100_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_BV_100_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "input_num_qubits": 100,
+                "output_num_qubits": 100,
+                "output_circuit_operations": {
+                    "CZ": 554,
+                    "RX": 1037,
+                    "RZ": 2080
+                },
+                "output_gate_count_2q": 554,
+                "output_depth_2q": 372
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.011652970919385552,
+                "max": 0.017692063003778458,
+                "mean": 0.012672391563913301,
+                "stddev": 0.0007300981304414507,
+                "rounds": 79,
+                "median": 0.012514711124822497,
+                "iqr": 0.00022546190302819014,
+                "q1": 0.01240785449044779,
+                "q3": 0.01263331639347598,
+                "iqr_outliers": 13,
+                "stddev_outliers": 7,
+                "outliers": "7;13",
+                "ld15iqr": 0.012237234972417355,
+                "hd15iqr": 0.012982361949980259,
+                "ops": 78.91170304803892,
+                "total": 1.0011189335491508,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_square_heisenberg_100_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_square_heisenberg_100_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "qasm_load_time": 0.05131502007134259,
+                "input_num_qubits": 100,
+                "output_num_qubits": 100,
+                "output_circuit_operations": {
+                    "X1": 1126,
+                    "CZ": 2139,
+                    "RX": 3596,
+                    "RZ": 8888
+                },
+                "output_gate_count_2q": 2139,
+                "output_depth_2q": 504
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.041371779050678015,
+                "max": 0.04266378004103899,
+                "mean": 0.04216290956727513,
+                "stddev": 0.0002645322941359291,
+                "rounds": 23,
+                "median": 0.042178326984867454,
+                "iqr": 0.00012956629507243633,
+                "q1": 0.04213170398725197,
+                "q3": 0.042261270282324404,
+                "iqr_outliers": 4,
+                "stddev_outliers": 4,
+                "outliers": "4;4",
+                "ld15iqr": 0.04199144593439996,
+                "hd15iqr": 0.042521345894783735,
+                "ops": 23.717528279313843,
+                "total": 0.9697469200473279,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_QAOA_100_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_QAOA_100_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "qasm_load_time": 0.016128134913742542,
+                "input_num_qubits": 100,
+                "output_num_qubits": 100,
+                "output_circuit_operations": {
+                    "X1": 1644,
+                    "CZ": 9592,
+                    "RX": 17831,
+                    "RZ": 38259
+                },
+                "output_gate_count_2q": 9592,
+                "output_depth_2q": 1836
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.05619692197069526,
+                "max": 0.06664031906984746,
+                "mean": 0.06104777161963284,
+                "stddev": 0.0027384958920806286,
+                "rounds": 15,
+                "median": 0.06190688791684806,
+                "iqr": 0.0032829284900799394,
+                "q1": 0.05906869005411863,
+                "q3": 0.06235161854419857,
+                "iqr_outliers": 0,
+                "stddev_outliers": 4,
+                "outliers": "4;0",
+                "ld15iqr": 0.05619692197069526,
+                "hd15iqr": 0.06664031906984746,
+                "ops": 16.380614287293692,
+                "total": 0.9157165742944926,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_BVlike_simplification_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_BVlike_simplification_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "input_num_qubits": 100,
+                "output_num_qubits": 2,
+                "output_circuit_operations": {
+                    "RX": 1,
+                    "RZ": 3
+                },
+                "output_gate_count_2q": 0,
+                "output_depth_2q": 0
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.006129386136308312,
+                "max": 0.007033254951238632,
+                "mean": 0.006335309034370831,
+                "stddev": 0.0001669692924161323,
+                "rounds": 142,
+                "median": 0.006301171029917896,
+                "iqr": 0.00016848184168338776,
+                "q1": 0.006211431929841638,
+                "q3": 0.006379913771525025,
+                "iqr_outliers": 9,
+                "stddev_outliers": 31,
+                "outliers": "31;9",
+                "ld15iqr": 0.006129386136308312,
+                "hd15iqr": 0.006640294101089239,
+                "ops": 157.84549649823225,
+                "total": 0.8996138828806579,
+                "iterations": 1
+            }
+        },
+        {
+            "group": "Transpile - Device",
+            "name": "test_clifford_100_transpile",
+            "fullname": "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_clifford_100_transpile",
+            "params": null,
+            "param": null,
+            "extra_info": {
+                "qasm_load_time": 0.05486632394604385,
+                "input_num_qubits": 100,
+                "output_num_qubits": 103,
+                "output_circuit_operations": {
+                    "CZ": 68747,
+                    "RX": 125524,
+                    "RZ": 251699
+                },
+                "output_gate_count_2q": 68747,
+                "output_depth_2q": 19348
+            },
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 1,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.42827616911381483,
+                "max": 0.4798714159987867,
+                "mean": 0.45450926331492764,
+                "stddev": 0.025808647380774465,
+                "rounds": 3,
+                "median": 0.45538020483218133,
+                "iqr": 0.03869643516372889,
+                "q1": 0.43505217804340646,
+                "q3": 0.47374861320713535,
+                "iqr_outliers": 0,
+                "stddev_outliers": 1,
+                "outliers": "1;0",
+                "ld15iqr": 0.42827616911381483,
+                "hd15iqr": 0.4798714159987867,
+                "ops": 2.2001751795036664,
+                "total": 1.3635277899447829,
+                "iterations": 1
+            }
+        }
+    ],
+    "datetime": "2026-03-31T18:06:18.756521+00:00",
+    "version": "4.0.0",
+    "qpanda_info": {
+        "pyqpanda3": "0.3.4"
+    },
+    "total_duration": 19.806121587753296,
+    "env_info": {
+        "numpy": "2.4.2",
+        "scipy": "1.17.1"
+    },
+    "test_status_counts": {
+        "passed": 9,
+        "failed": 0,
+        "xfailed": 0,
+        "skipped": 0
+    },
+    "test_dumps": {
+        "passed": {
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_QFT_100_transpile": {
+                "duration": 2.582830582978204,
+                "exception": "None",
+                "keywords": {
+                    "test_QFT_100_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_QV_100_transpile": {
+                "duration": 4.585222196998075,
+                "exception": "None",
+                "keywords": {
+                    "test_QV_100_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_circSU2_89_transpile": {
+                "duration": 0.9909713182132691,
+                "exception": "None",
+                "keywords": {
+                    "test_circSU2_89_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_circSU2_100_transpile": {
+                "duration": 1.041025904007256,
+                "exception": "None",
+                "keywords": {
+                    "test_circSU2_100_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_BV_100_transpile": {
+                "duration": 1.0320383179932833,
+                "exception": "None",
+                "keywords": {
+                    "test_BV_100_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_square_heisenberg_100_transpile": {
+                "duration": 1.1264688519295305,
+                "exception": "None",
+                "keywords": {
+                    "test_square_heisenberg_100_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_QAOA_100_transpile": {
+                "duration": 1.2227236218750477,
+                "exception": "None",
+                "keywords": {
+                    "test_QAOA_100_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_BVlike_simplification_transpile": {
+                "duration": 0.9139848768245429,
+                "exception": "None",
+                "keywords": {
+                    "test_BVlike_simplification_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            },
+            "qpanda_gym/device_transpile/test_summit.py::TestWorkoutDeviceTranspile100Q::test_clifford_100_transpile": {
+                "duration": 2.9957342580892146,
+                "exception": "None",
+                "keywords": {
+                    "test_clifford_100_transpile": 1,
+                    "TestWorkoutDeviceTranspile100Q": 1,
+                    "benchmark": 1,
+                    "test_summit.py": 1,
+                    "device_transpile": 1,
+                    "qpanda_gym": 1,
+                    "benchpress": 1,
+                    "": 1
+                }
+            }
+        },
+        "failed": {},
+        "xfailed": {},
+        "skipped": {}
+    }
+}
