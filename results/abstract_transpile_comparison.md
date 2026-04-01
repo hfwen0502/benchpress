@@ -4,6 +4,12 @@
 
 Qiskit's SABRE router produces **8.5x gate overhead** (vs ~2.3x theoretical minimum) on linear-chain circuits (cat, ghz, wstate, ising) at 100–380 qubits on heavy-hex topology. For example, `cat_n260` on heavy-hex: 2,194 output 2Q gates vs 259 original, taking 5.3s. The same circuit compiles at near-optimal on all other topologies. Since heavy-hex is IBM's production topology, this is a high-value optimization target — similar to how the [device transpile adaptive pass manager](device_transpile_comparison.md#adaptive-strategies) improved Clifford and parameterized circuit compilation. See [detailed analysis](#analysis-qiskit-sabre-routing-issue-on-large-heavy-hex-chain-circuits) below.
 
+## Figures
+
+![Compilation Time](abstract_compilation_time.png)
+![Adaptive Speedup on All-to-All](abstract_adaptive_speedup.png)
+![Gate Quality by Topology](abstract_gate_quality.png)
+
 ## Setup
 
 - **Qiskit version**: 2.3.1 (`optimization_level=2`)
@@ -171,6 +177,41 @@ This is a potential Qiskit optimization opportunity or bug — these are exactly
 
 Qiskit does **not** perform poorly across the board on abstract transpile. It still produces better gate quality on square and linear topologies. The apparent "QPanda3 wins on heavy-hex" result is driven by a specific SABRE routing inefficiency on large linear-chain circuits, not a general QPanda3 advantage.
 
+## Adaptive Strategy: Skip Layout/Routing on All-to-All
+
+**Implementation**: `benchpress/qiskit_gym/abstract_transpile/test_qasmbench_adaptive.py`
+
+For all-to-all topology, layout and routing passes are unnecessary since every qubit can interact with every other. The adaptive pass manager uses level 2 optimization but sets `pm.layout = None` and `pm.routing = None`.
+
+**Result**: Identical 2Q gate counts (zero quality loss) with significant speedup on all-to-all:
+
+### Medium All-to-All (23 circuits)
+
+| Circuit | Baseline (ms) | Adaptive (ms) | Speedup |
+|---------|-------------|-------------|---------|
+| ghz_state_n23 | 6.2 | 1.3 | 4.8x |
+| cat_state_n22 | 6.1 | 1.3 | 4.7x |
+| qec9xz_n17 | 5.8 | 1.3 | 4.5x |
+| qram_n20 | 15.1 | 4.6 | 3.3x |
+| factor247_n15 | 15,874 | 15,875 | 1.0x |
+
+### Large All-to-All (57 circuits)
+
+| Circuit | Qubits | Baseline (ms) | Adaptive (ms) | Speedup |
+|---------|--------|-------------|-------------|---------|
+| bv_n280 | 280 | 1,606 | 24 | 67x |
+| bv_n140 | 140 | 448 | 8 | 57x |
+| bv_n70 | 70 | 95 | 3 | 28x |
+| wstate_n380 | 380 | 493 | 47 | 11x |
+| ghz_state_n255 | 255 | 171 | 19 | 9x |
+| cat_n260 | 260 | 167 | 19 | 9x |
+| ising_n420 | 420 | 702 | 116 | 6x |
+| vqe_uccsd_n28 | 28 | 26,941 | 25,334 | 1.1x |
+
+BV circuits see the largest speedup (up to 67x) because VF2Layout was spending significant time searching for subgraph isomorphisms on the fully-connected graph. Complex circuits (vqe_uccsd, multiplier) see minimal speedup since their time is dominated by optimization passes, not layout/routing.
+
+**Total Large all-to-all**: 84.8s → 72.4s (1.2x overall, dominated by a few heavy circuits).
+
 ## Observations
 
 1. **Pass manager overhead is Qiskit's main weakness**: On small circuits (cc_n12, 12Q all-to-all), Qiskit is 93x slower. On large simple-structure circuits (ising_n98, 98Q heavy-hex), it's 196x slower. Pass manager setup, analysis passes, and the optimization pipeline dominate when the circuit structure is simple.
@@ -195,4 +236,6 @@ Qiskit does **not** perform poorly across the board on abstract transpile. It st
 - `benchpress/qpanda_gym/abstract_transpile/test_qasmbench.py` — QPanda3 tests
 - `benchpress/utilities/backends/flexible_backend.py` — FlexibleBackend topology generation
 - `benchpress/workouts/abstract_transpile/qasmbench.py` — Test parametrization
+- `benchpress/qiskit_gym/abstract_transpile/test_qasmbench_adaptive.py` — Qiskit adaptive tests
+- `results/plot_abstract_comparison.py` — Script to regenerate figures
 - `.benchmarks/Linux-CPython-3.11-64bit/abstract_*.json` — Raw benchmark JSON data
