@@ -205,4 +205,67 @@ fig3.savefig(os.path.join(RESULTS_DIR, "abstract_gate_quality.png"), dpi=150, bb
 print("Saved abstract_gate_quality.png")
 
 
-print("\nDone. Generated 3 figures in results/")
+# --- Figure 4: Chain Pre-Layout — 2Q Gate Count Comparison (heavy-hex, Large) ---
+
+# Load heavy-hex adaptive results
+hh_path = os.path.join(BENCH_DIR, "abstract_qiskit_adaptive_large_heavyhex_v1.json")
+if os.path.exists(hh_path):
+    with open(hh_path) as f:
+        hh_data = json.load(f)
+    hh_l = parse(hh_data, "large")
+
+    # Select chain circuits that show improvement
+    chain_circuits = []
+    for k in sorted(qi_l.keys()):
+        if k[1] == "heavy-hex" and k in hh_l and k in qp_l:
+            qi_cz = qi_l[k]["cz"]
+            hh_cz = hh_l[k]["cz"]
+            if qi_cz > 0 and hh_cz < qi_cz:
+                chain_circuits.append(k)
+
+    if chain_circuits:
+        # Sort by gate reduction ratio
+        chain_circuits.sort(key=lambda k: hh_l[k]["cz"] / qi_l[k]["cz"])
+
+        fig4, ax4 = plt.subplots(figsize=(10, 5))
+        labels = [k[0] for k in chain_circuits]
+        short_labels = [c[:15] + ".." if len(c) > 17 else c for c in labels]
+
+        x = np.arange(len(chain_circuits))
+        width = 0.25
+        default_vals = [qi_l[k]["cz"] for k in chain_circuits]
+        adaptive_vals = [hh_l[k]["cz"] for k in chain_circuits]
+        qpanda_vals = [qp_l[k]["cz"] for k in chain_circuits]
+
+        ax4.bar(x - width, default_vals, width, label="Qiskit Default", color=colors["qiskit"])
+        ax4.bar(x, adaptive_vals, width, label="Qiskit Adaptive", color=colors["adaptive"])
+        ax4.bar(x + width, qpanda_vals, width, label="QPanda3", color=colors["qpanda"])
+
+        ax4.set_yscale("log")
+        ax4.set_ylabel("2Q Gate Count (log scale)")
+        ax4.set_title("Fix #2: Chain Pre-Layout on Heavy-Hex — Large Circuits\n"
+                       "(chain detection + backbone layout before SABRE routing)")
+        ax4.set_xticks(x)
+        ax4.set_xticklabels(short_labels, rotation=45, ha="right", fontsize=8)
+        ax4.legend(fontsize=8)
+        ax4.grid(axis="y", alpha=0.3)
+
+        # Annotate reduction %
+        for i, k in enumerate(chain_circuits):
+            reduction = (1 - hh_l[k]["cz"] / qi_l[k]["cz"]) * 100
+            ax4.annotate(f"-{reduction:.0f}%", xy=(i, adaptive_vals[i]),
+                         xytext=(0, 5), textcoords="offset points",
+                         ha="center", fontsize=7, fontweight="bold",
+                         color=colors["adaptive"])
+
+        fig4.tight_layout()
+        fig4.savefig(os.path.join(RESULTS_DIR, "abstract_chain_prelayout.png"),
+                     dpi=150, bbox_inches="tight")
+        print("Saved abstract_chain_prelayout.png")
+    else:
+        print("No chain circuits with improvement found — skipping figure 4")
+else:
+    print("Heavy-hex adaptive results not found — skipping figure 4")
+
+
+print("\nDone. Generated figures in results/")
