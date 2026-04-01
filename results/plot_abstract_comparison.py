@@ -53,33 +53,23 @@ colors = {"qpanda": "#E74C3C", "qiskit": "#3498DB", "adaptive": "#2ECC71"}
 topos = ["all-to-all", "square", "heavy-hex", "linear"]
 
 
-# --- Figure 1: Compilation Time by Topology (Medium + Large combined) ---
+# --- Figure 1: Baseline Compilation Time by Topology (QPanda3 vs Qiskit only) ---
 fig1, (ax1a, ax1b) = plt.subplots(1, 2, figsize=(14, 5))
 
-for ax, qi_d, qp_d, ad_d, title in [
-    (ax1a, qi_m, qp_m, ad_m, "Medium (11-27Q)"),
-    (ax1b, qi_l, qp_l, ad_l, "Large (28-433Q)"),
+for ax, qi_d, qp_d, title in [
+    (ax1a, qi_m, qp_m, "Medium (11-27Q)"),
+    (ax1b, qi_l, qp_l, "Large (28-433Q)"),
 ]:
-    topo_times = {"qpanda": [], "qiskit": [], "adaptive": []}
+    topo_times = {"qpanda": [], "qiskit": []}
     for topo in topos:
         common = [k for k in qi_d if k[1] == topo and k in qp_d]
         topo_times["qiskit"].append(sum(qi_d[k]["time"] for k in common))
         topo_times["qpanda"].append(sum(qp_d[k]["time"] for k in common))
-        # Adaptive only applies to all-to-all
-        if topo == "all-to-all":
-            common_ad = [k for k in ad_d if k[1] == topo]
-            topo_times["adaptive"].append(sum(ad_d[k]["time"] for k in common_ad))
-        else:
-            topo_times["adaptive"].append(None)
 
     x = np.arange(len(topos))
-    width = 0.25
-    ax.bar(x - width, topo_times["qpanda"], width, label="QPanda3", color=colors["qpanda"])
-    ax.bar(x, topo_times["qiskit"], width, label="Qiskit Default", color=colors["qiskit"])
-    # Only show adaptive bar on all-to-all (index 0)
-    if topo_times["adaptive"][0] is not None:
-        ax.bar([0 + width], [topo_times["adaptive"][0]], width,
-               label="Qiskit Adaptive", color=colors["adaptive"])
+    width = 0.3
+    ax.bar(x - width / 2, topo_times["qpanda"], width, label="QPanda3", color=colors["qpanda"])
+    ax.bar(x + width / 2, topo_times["qiskit"], width, label="Qiskit Default", color=colors["qiskit"])
     ax.set_yscale("log")
     ax.set_ylabel("Total Compilation Time (s, log scale)")
     ax.set_title(f"Abstract Transpile — {title}")
@@ -88,25 +78,58 @@ for ax, qi_d, qp_d, ad_d, title in [
     ax.legend(fontsize=8)
     ax.grid(axis="y", alpha=0.3)
 
-    # Annotate speedup on all-to-all
-    qi_a2a = topo_times["qiskit"][0]
-    ad_a2a = topo_times["adaptive"][0]
-    if ad_a2a and ad_a2a > 0:
-        ax.annotate(
-            f"{qi_a2a / ad_a2a:.1f}x",
-            xy=(0 + width, ad_a2a),
-            xytext=(0, 5),
-            textcoords="offset points",
-            ha="center",
-            fontsize=8,
-            color=colors["adaptive"],
-            fontweight="bold",
-        )
+    # Annotate speedup per topology
+    for i, topo in enumerate(topos):
+        qi_t = topo_times["qiskit"][i]
+        qp_t = topo_times["qpanda"][i]
+        if qp_t > 0:
+            ax.annotate(
+                f"{qi_t / qp_t:.1f}x",
+                xy=(i - width / 2, qp_t),
+                xytext=(0, 5),
+                textcoords="offset points",
+                ha="center",
+                fontsize=7,
+                color=colors["qpanda"],
+                fontweight="bold",
+            )
 
-fig1.suptitle("Compilation Time by Topology\nIntel Xeon SPR, 160 vCPUs", y=1.02)
+fig1.suptitle("Baseline Compilation Time by Topology\nIntel Xeon SPR, 160 vCPUs", y=1.02)
 fig1.tight_layout()
 fig1.savefig(os.path.join(RESULTS_DIR, "abstract_compilation_time.png"), dpi=150, bbox_inches="tight")
 print("Saved abstract_compilation_time.png")
+
+
+# --- Figure 1b: Adaptive vs Default on All-to-All ---
+fig1b, (ax1ba, ax1bb) = plt.subplots(1, 2, figsize=(12, 5))
+
+for ax, qi_d, ad_d, title in [
+    (ax1ba, qi_m, ad_m, "Medium (11-27Q)"),
+    (ax1bb, qi_l, ad_l, "Large (28-433Q)"),
+]:
+    common = sorted([k for k in qi_d if k[1] == "all-to-all" and k in ad_d],
+                    key=lambda k: qi_d[k]["time"] / ad_d[k]["time"] if ad_d[k]["time"] > 0 else 0,
+                    reverse=True)
+    labels = [k[0][:15] + ".." if len(k[0]) > 17 else k[0] for k in common]
+    default_t = [qi_d[k]["time"] * 1000 for k in common]  # ms
+    adaptive_t = [ad_d[k]["time"] * 1000 for k in common]
+
+    x = np.arange(len(common))
+    width = 0.35
+    ax.bar(x - width / 2, default_t, width, label="Qiskit Default", color=colors["qiskit"])
+    ax.bar(x + width / 2, adaptive_t, width, label="Qiskit Adaptive", color=colors["adaptive"])
+    ax.set_yscale("log")
+    ax.set_ylabel("Compilation Time (ms, log scale)")
+    ax.set_title(f"All-to-All: Default vs Adaptive — {title}")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=70, ha="right", fontsize=6)
+    ax.legend(fontsize=8)
+    ax.grid(axis="y", alpha=0.3)
+
+fig1b.suptitle("Fix #1: Skip Layout/Routing on All-to-All\n(identical gate output, level 2 optimization)", y=1.02)
+fig1b.tight_layout()
+fig1b.savefig(os.path.join(RESULTS_DIR, "abstract_adaptive_a2a.png"), dpi=150, bbox_inches="tight")
+print("Saved abstract_adaptive_a2a.png")
 
 
 # --- Figure 2: Adaptive Speedup on All-to-All (per circuit, Large) ---

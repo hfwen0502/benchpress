@@ -114,6 +114,8 @@ pm.routing = None
 
 **Gate quality**: Identical 2Q gate counts on every circuit — zero quality loss.
 
+![Default vs Adaptive on All-to-All](abstract_adaptive_a2a.png)
+
 ![Adaptive Speedup per Circuit](abstract_adaptive_speedup.png)
 
 **Medium all-to-all speedups** (selected circuits):
