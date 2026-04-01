@@ -65,18 +65,21 @@ for ax, qi_d, qp_d, ad_d, title in [
         common = [k for k in qi_d if k[1] == topo and k in qp_d]
         topo_times["qiskit"].append(sum(qi_d[k]["time"] for k in common))
         topo_times["qpanda"].append(sum(qp_d[k]["time"] for k in common))
-        # Adaptive only changes all-to-all; use baseline for others
+        # Adaptive only applies to all-to-all
         if topo == "all-to-all":
             common_ad = [k for k in ad_d if k[1] == topo]
             topo_times["adaptive"].append(sum(ad_d[k]["time"] for k in common_ad))
         else:
-            topo_times["adaptive"].append(sum(qi_d[k]["time"] for k in common))
+            topo_times["adaptive"].append(None)
 
     x = np.arange(len(topos))
     width = 0.25
     ax.bar(x - width, topo_times["qpanda"], width, label="QPanda3", color=colors["qpanda"])
     ax.bar(x, topo_times["qiskit"], width, label="Qiskit Default", color=colors["qiskit"])
-    ax.bar(x + width, topo_times["adaptive"], width, label="Qiskit Adaptive", color=colors["adaptive"])
+    # Only show adaptive bar on all-to-all (index 0)
+    if topo_times["adaptive"][0] is not None:
+        ax.bar([0 + width], [topo_times["adaptive"][0]], width,
+               label="Qiskit Adaptive", color=colors["adaptive"])
     ax.set_yscale("log")
     ax.set_ylabel("Total Compilation Time (s, log scale)")
     ax.set_title(f"Abstract Transpile — {title}")
@@ -88,7 +91,7 @@ for ax, qi_d, qp_d, ad_d, title in [
     # Annotate speedup on all-to-all
     qi_a2a = topo_times["qiskit"][0]
     ad_a2a = topo_times["adaptive"][0]
-    if ad_a2a > 0:
+    if ad_a2a and ad_a2a > 0:
         ax.annotate(
             f"{qi_a2a / ad_a2a:.1f}x",
             xy=(0 + width, ad_a2a),
@@ -100,7 +103,7 @@ for ax, qi_d, qp_d, ad_d, title in [
             fontweight="bold",
         )
 
-fig1.suptitle("Compilation Time by Topology — FakeTorino-equivalent\nIntel Xeon SPR, 160 vCPUs", y=1.02)
+fig1.suptitle("Compilation Time by Topology\nIntel Xeon SPR, 160 vCPUs", y=1.02)
 fig1.tight_layout()
 fig1.savefig(os.path.join(RESULTS_DIR, "abstract_compilation_time.png"), dpi=150, bbox_inches="tight")
 print("Saved abstract_compilation_time.png")
