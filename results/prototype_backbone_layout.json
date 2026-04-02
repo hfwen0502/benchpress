@@ -1,0 +1,24 @@
+{
+  "multiply_n13": {
+    "num_qubits": 13,
+    "default_gates_mean": 83.0,
+    "default_gates_min": 83,
+    "backbone_gates_mean": 153.0,
+    "backbone_gates_min": 153,
+    "gate_ratio": 1.8433734939759037,
+    "default_time_mean": 0.13086412497796118,
+    "backbone_time_mean": 0.2813167911954224,
+    "speedup": 0.4651841947360112
+  },
+  "qft_n18": {
+    "num_qubits": 18,
+    "default_gates_mean": 697.0,
+    "default_gates_min": 697,
+    "backbone_gates_mean": 722.0,
+    "backbone_gates_min": 722,
+    "gate_ratio": 1.035868005738881,
+    "default_time_mean": 0.955043249996379,
+    "backbone_time_mean": 0.49725870811380446,
+    "speedup": 1.9206164405225545
+  }
+}
