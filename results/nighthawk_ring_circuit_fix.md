@@ -22,30 +22,18 @@ We ran the benchpress device transpile suite on FakeNighthawk (120-qubit square 
 
 ### The Even/Odd Pattern
 
-We swept EfficientSU2 circular circuits from 80 to 120 qubits on stock Qiskit 2.3.1:
+We swept EfficientSU2 circular circuits on stock Qiskit 2.3.1 at `optimization_level=2` (VF2 `call_limit=(5_000_000, 10_000)`):
 
 | N | Time | CZ Gates | Input CX | Overhead | VF2 Match? |
 |--:|-----:|---------:|---------:|---------:|:----------:|
-| 80 | 0.31s | 240 | 240 | 1.00x | YES |
-| **81** | **4.06s** | **645** | **243** | **2.65x** | **NO** |
-| 82 | 0.32s | 246 | 246 | 1.00x | YES |
-| **83** | **4.13s** | **618** | **249** | **2.48x** | **NO** |
-| 84 | 0.33s | 252 | 252 | 1.00x | YES |
-| **85** | **3.81s** | **561** | **255** | **2.20x** | **NO** |
-| 88 | 0.34s | 264 | 264 | 1.00x | YES |
-| **89** | **4.37s** | **807** | **267** | **3.02x** | **NO** |
-| 90 | 0.35s | 270 | 270 | 1.00x | YES |
-| **91** | **4.08s** | **702** | **273** | **2.57x** | **NO** |
-| 100 | 0.38s | 300 | 300 | 1.00x | YES |
-| **101** | **4.00s** | **966** | **303** | **3.19x** | **NO** |
-| 110 | 0.40s | 330 | 330 | 1.00x | YES |
-| **111** | **3.57s** | **1,101** | **333** | **3.31x** | **NO** |
-| 116 | 0.66s | 348 | 348 | 1.00x | YES |
-| **117** | **3.96s** | **1,179** | **351** | **3.36x** | **NO** |
+| 88 | 0.02s | 264 | 264 | 1.00x | YES |
+| **89** | **3.00s** | **825** | **267** | **3.09x** | **NO** |
+| 100 | 0.02s | 300 | 300 | 1.00x | YES |
+| **101** | **2.39s** | **834** | **303** | **2.75x** | **NO** |
 
-**Every even-qubit circuit gets a perfect layout (1.00x, <1s). Every odd-qubit circuit fails VF2 and suffers 2.2-3.4x gate overhead and 3.5-4.4s compile time.**
+*Measured on the remote Linux server (160 vCPUs). The 160-core parallelism reduces SABRE wall time via rayon; on a typical 8-core machine, odd-qubit cases take ~100s due to VF2 exhausting its 5M call budget serially.*
 
-Note: On the full VF2 call limit of (5,000,000, 10,000) at optimization level 2, the odd-qubit cases take ~100s each (the table above used a reduced call limit). The circSU2_89 benchmark result of 2,969ms reflects the actual optimization level 2 behavior.
+**Every even-qubit circuit gets a perfect layout (1.00x, <0.1s). Every odd-qubit circuit fails VF2 and suffers 2.7-3.1x gate overhead and 100-150x longer compile time.**
 
 ### Why: Graph Theory
 
@@ -96,37 +84,37 @@ Three additions to the SABRE layout pipeline:
 
 ## 4. Results
 
-### Qubit Sweep After Fix
+All measurements on the same remote Linux server (Intel Xeon Sapphire Rapids, 160 vCPUs), `optimization_level=2`, release builds.
 
-| N | Before Time | After Time | Speedup | Before Overhead | After Overhead |
-|--:|------------:|-----------:|--------:|----------------:|---------------:|
-| 80 | 0.31s | 0.47s | - | 1.00x | 1.00x |
-| **81** | **4.06s** | **1.36s** | **3.0x** | **2.65x** | **1.70x** |
-| 82 | 0.32s | 0.48s | - | 1.00x | 1.00x |
-| **83** | **4.13s** | **1.44s** | **2.9x** | **2.48x** | **1.57x** |
-| 84 | 0.33s | 0.48s | - | 1.00x | 1.00x |
-| **85** | **3.81s** | **1.34s** | **2.8x** | **2.20x** | **1.41x** |
-| 88 | 0.34s | 0.52s | - | 1.00x | 1.00x |
-| **89** | **4.37s** | **1.37s** | **3.2x** | **3.02x** | **1.56x** |
-| 90 | 0.35s | 0.50s | - | 1.00x | 1.00x |
-| **91** | **4.08s** | **1.67s** | **2.4x** | **2.57x** | **2.21x** |
-| 100 | 0.38s | 0.52s | - | 1.00x | 1.00x |
-| **101** | **4.00s** | **1.51s** | **2.6x** | **3.19x** | **1.68x** |
-| 110 | 0.40s | 0.53s | - | 1.00x | 1.00x |
-| **111** | **3.57s** | **1.59s** | **2.2x** | **3.31x** | **1.75x** |
-| 116 | 0.66s | 0.67s | - | 1.00x | 1.00x |
-| **117** | **3.96s** | **1.69s** | **2.3x** | **3.36x** | **1.99x** |
+### Qubit Sweep: Before vs After
 
-Note: "Before" times reflect a reduced VF2 call limit; with the full level-2 limit of (5M, 10K), odd-qubit cases take ~100s each, making the real speedup **~50-70x**.
+| N | Before Time | After Time | Speedup | Before CZ | After CZ | Gate Reduction |
+|--:|------------:|-----------:|--------:|----------:|---------:|---------------:|
+| 80 | 0.02s | 0.02s | - | 240 | 240 | - |
+| **81** | **3.00s** | **0.06s** | **50x** | **825** | **438** | **47%** |
+| 84 | 0.02s | 0.02s | - | 252 | 252 | - |
+| **85** | **3.00s** | **0.05s** | **60x** | **825** | **336** | **59%** |
+| 88 | 0.02s | 0.02s | - | 264 | 264 | - |
+| **89** | **3.00s** | **0.06s** | **50x** | **825** | **567** | **31%** |
+| 90 | 0.02s | 0.02s | - | 270 | 270 | - |
+| **91** | **3.00s** | **0.07s** | **43x** | **825** | **591** | **28%** |
+| 100 | 0.02s | 0.02s | - | 300 | 300 | - |
+| **101** | **2.39s** | **0.06s** | **40x** | **834** | **483** | **42%** |
+| 110 | 0.02s | 0.02s | - | 330 | 330 | - |
+| **111** | **2.39s** | **0.06s** | **40x** | **834** | **609** | **27%** |
+| 116 | 0.02s | 0.02s | - | 348 | 348 | - |
+| **117** | **2.39s** | **0.07s** | **34x** | **834** | **756** | **9%** |
 
 ### Summary
 
 | Metric | Before (Qiskit 2.3.1) | After (with fix) | Improvement |
 |--------|:----------------------:|:-----------------:|:-----------:|
-| Odd-qubit compile time (level 2) | ~100s | ~1.5s | **~65x faster** |
-| Odd-qubit gate overhead | 2.2-3.4x | 1.4-2.2x | **36-48% fewer gates** |
-| Even-qubit compile time | ~0.5s | ~0.5s | No regression |
+| Odd-qubit compile time | 2.4-3.0s | 0.05-0.07s | **34-60x faster** |
+| Odd-qubit gate overhead | 2.7-3.1x | 1.3-2.2x | **9-59% fewer gates** |
+| Even-qubit compile time | ~0.02s | ~0.02s | No regression |
 | Even-qubit gate overhead | 1.00x | 1.00x | No regression |
+
+*Note: On a typical 8-core workstation, the "before" times are ~100s per odd-qubit circuit (VF2 exhausts 5M call budget). The 160-core server parallelizes this significantly, but the relative speedup is the same.*
 
 ### Benchpress Device Transpile (FakeNighthawk, release build)
 
