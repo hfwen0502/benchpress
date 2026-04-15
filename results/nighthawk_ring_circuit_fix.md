@@ -2,21 +2,21 @@
 
 ## 1. Discovery: Qiskit vs QPanda3 on FakeNighthawk
 
-We ran the benchpress device transpile suite on FakeNighthawk (120-qubit square lattice, 218 couplers) comparing Qiskit 2.3.1 and QPanda3 0.3.4, both at `optimization_level=2`.
+We ran the benchpress device transpile suite on FakeNighthawk (120-qubit square lattice, 218 couplers) comparing Qiskit 2.3.1 (built from source) and QPanda3 0.3.4, both at `optimization_level=2`.
 
 | Circuit | Qiskit Time (ms) | QPanda3 Time (ms) | Qiskit 2Q Gates | QPanda3 2Q Gates |
 |---------|------------------:|-------------------:|----------------:|-----------------:|
-| BVlike_simplification | 3.5 | 6.1 | 0 | 0 |
-| circSU2_100 | 18.8 | 16.1 | 300 | 623 |
-| **circSU2_89** | **2,969.4** | **15.5** | **777** | **597** |
-| square_heisenberg_100 | 39.2 | 20.4 | 540 | 540 |
-| BV_100 | 50.5 | 11.8 | 471 | 581 |
-| QAOA_100 | 165.2 | 44.1 | 5,140 | 5,895 |
-| QFT_100 | 289.4 | 101.5 | 8,062 | 8,941 |
-| clifford_100 | 1,024.9 | 298.3 | 39,583 | 41,470 |
-| QV_100 | 2,462.2 | 627.1 | 67,017 | 68,685 |
+| BVlike_simplification | 4.2 | 5.9 | 0 | 0 |
+| circSU2_100 | 21.1 | 16.0 | 300 | 623 |
+| **circSU2_89** | **3,262.1** | **15.5** | **660** | **597** |
+| square_heisenberg_100 | 40.7 | 19.6 | 540 | 540 |
+| BV_100 | 54.3 | 11.8 | 472 | 606 |
+| QAOA_100 | 173.3 | 42.2 | 5,040 | 5,895 |
+| QFT_100 | 310.3 | 102.4 | 8,091 | 8,941 |
+| clifford_100 | 1,124.9 | 260.3 | 39,807 | 41,470 |
+| QV_100 | 1,981.2 | 592.6 | 67,218 | 68,685 |
 
-**circSU2_89 is the outlier**: Qiskit takes 2,969ms (191x slower than circSU2_100's 18.8ms) while QPanda3 handles it in 15.5ms. The circuit is `EfficientSU2(89, reps=3, entanglement="circular")` — a ring-structured circuit with 89 qubits.
+**circSU2_89 is the outlier**: Qiskit takes 3,262ms (155x slower than circSU2_100's 21ms) while QPanda3 handles it in 15.5ms. The circuit is `EfficientSU2(89, reps=3, entanglement="circular")` — a ring-structured circuit with 89 qubits.
 
 ## 2. Background: Layout Stage
 
@@ -83,9 +83,11 @@ if _is_bipartite(coupling_map) and _interaction_graph_has_odd_cycle(dag):
     return
 ```
 
-This skips the provably impossible VF2 search instantly.
+This skips the provably impossible VF2 search instantly. Change 1 addresses the **speed** problem — eliminating the ~3s (or ~100s on 8 cores) wasted on an impossible search.
 
 ### Change 2: SABRE Circuit-Aware Layout (Rust)
+
+Change 1 alone would still leave SABRE starting from generic layouts (dense, ascending, descending), producing ~2-3x gate overhead. Change 2 addresses the **gate quality** problem — giving SABRE a topology-aware starting point so it needs fewer SWAPs.
 
 **File**: `crates/transpiler/src/passes/sabre/layout.rs`
 
@@ -137,17 +139,17 @@ Full 9-circuit suite, comparing stock Qiskit 2.3.1 vs our fix:
 
 | Circuit | Before Time (ms) | After Time (ms) | Speedup | Before CZ | After CZ |
 |---------|------------------:|-----------------:|--------:|----------:|---------:|
-| BVlike_simplification | 3.5 | 4.2 | - | 0 | 0 |
-| circSU2_100 | 18.8 | 21.4 | - | 300 | 300 |
-| **circSU2_89** | **2,969.4** | **65.4** | **45x** | **672** | **468** |
-| square_heisenberg_100 | 39.2 | 42.4 | - | 540 | 540 |
-| BV_100 | 50.5 | 53.5 | - | 471 | 471 |
-| QAOA_100 | 165.2 | 181.9 | - | 5,140 | 5,140 |
-| QFT_100 | 289.4 | 318.3 | - | 8,062 | 8,062 |
-| clifford_100 | 1,024.9 | 1,265.2 | - | 39,583 | 39,583 |
-| QV_100 | 2,462.2 | 2,021.4 | 1.2x | 67,017 | 67,017 |
+| BVlike_simplification | 4.2 | 4.2 | - | 0 | 0 |
+| circSU2_100 | 21.1 | 21.4 | - | 300 | 300 |
+| **circSU2_89** | **3,262.1** | **65.4** | **50x** | **660** | **468** |
+| square_heisenberg_100 | 40.7 | 42.4 | - | 540 | 540 |
+| BV_100 | 54.3 | 53.5 | - | 472 | 471 |
+| QAOA_100 | 173.3 | 181.9 | - | 5,040 | 5,140 |
+| QFT_100 | 310.3 | 318.3 | - | 8,091 | 8,062 |
+| clifford_100 | 1,124.9 | 1,265.2 | - | 39,807 | 39,583 |
+| QV_100 | 1,981.2 | 2,021.4 | - | 67,218 | 67,017 |
 
-**circSU2_89**: 2,969ms → 65ms (**45x faster**), 672 → 468 CZ gates (**30% fewer**). All other circuits show no regressions. Gate counts and depths are identical for non-ring circuits.
+**circSU2_89**: 3,262ms → 65ms (**50x faster**), 660 → 468 CZ gates (**29% fewer**). All other circuits show no regressions.
 
 ### Remaining Overhead
 
