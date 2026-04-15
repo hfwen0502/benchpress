@@ -18,7 +18,22 @@ We ran the benchpress device transpile suite on FakeNighthawk (120-qubit square 
 
 **circSU2_89 is the outlier**: Qiskit takes 2,969ms (191x slower than circSU2_100's 18.8ms) while QPanda3 handles it in 15.5ms. The circuit is `EfficientSU2(89, reps=3, entanglement="circular")` — a ring-structured circuit with 89 qubits.
 
-## 2. Root Cause: Odd-Qubit Rings on Bipartite Graphs
+## 2. Background: Layout Stage
+
+The transpiler's Layout stage maps virtual qubits to physical qubits. It analyzes both the **circuit topology** (which qubits interact via 2Q gates) and the **hardware topology** (which physical qubits are connected), aiming to place interacting qubits on adjacent hardware qubits to minimize SWAPs. At optimization level 2, it runs:
+
+1. **VF2Layout**: finds a perfect layout via subgraph isomorphism (VF2++, call limit 5M). If found, no SWAPs needed.
+2. **SabreLayout** (fallback): heuristic that interleaves layout selection with SWAP insertion across multiple parallel trials.
+
+QPanda3, by contrast, skips VF2Layout and goes directly to SABRE-style heuristic routing. This makes QPanda3 consistently fast (no risk of VF2 timeout), but it misses perfect layouts when they exist — e.g., circSU2_100: Qiskit finds a perfect layout producing 300 CZ gates, while QPanda3 produces 623 (2.08x overhead).
+
+Stock Qiskit 2.3.1 had a gap in circuit-topology awareness:
+- **VF2Layout**: understands both topologies, but uses brute-force search (VF2++ backtracking) with no structural reasoning. When no perfect layout exists, it simply exhausts its entire 5M call budget before giving up.
+- **SabreLayout**: blind to circuit structure — it doesn't know whether the circuit is a chain, ring, star, or arbitrary graph, so it can't choose a topology-aware starting layout.
+
+Our fix adds that missing circuit-awareness to both algorithms — detect the circuit's interaction structure (chain/ring), detect the hardware's graph properties (bipartite), and use this information to skip impossible searches and provide better starting layouts.
+
+## 3. Root Cause: Odd-Qubit Rings on Bipartite Graphs
 
 ### The Even/Odd Pattern
 
@@ -50,7 +65,7 @@ The same issue applies to **chain (linear) circuits**: while not involving odd c
 
 QPanda3 does not use VF2 — it goes directly to SABRE-style heuristic routing, which is why it doesn't suffer the 100s timeout. However, QPanda3 produces more 2Q gates on constrained topologies (597 vs 300 for circSU2_100). No quantum SDK we examined (QPanda3, QPanda-2, Qiskit) has explicit handling for the bipartite/odd-cycle case.
 
-## 3. Fix: Two Changes to Qiskit Core
+## 4. Fix: Two Changes to Qiskit Core
 
 ### Change 1: VF2Layout Early Exit (Python)
 
@@ -82,7 +97,7 @@ Three additions to the SABRE layout pipeline:
 
 3. **Modified `add_heuristic_layouts`**: When a path/ring circuit is detected, adds a circuit-aware starting layout that maps virtual qubits sequentially onto the hardware long path. This is an additional SABRE trial — it doesn't replace any existing trials.
 
-## 4. Results
+## 5. Results
 
 All measurements on the same remote Linux server (Intel Xeon Sapphire Rapids, 160 vCPUs), `optimization_level=2`, release builds.
 
@@ -138,7 +153,7 @@ Full 9-circuit suite, comparing stock Qiskit 2.3.1 vs our fix:
 
 The residual 1.4-2.2x overhead on odd-qubit rings is inherent: an odd cycle cannot perfectly embed in a bipartite graph, so at least one "wrap-around" edge requires SWAP routing. This is a fundamental graph-theoretic limitation, not a compiler deficiency.
 
-## 5. Files Changed
+## 6. Files Changed
 
 | File | Lines | Description |
 |------|------:|-------------|
