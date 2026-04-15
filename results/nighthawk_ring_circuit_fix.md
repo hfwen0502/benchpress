@@ -61,10 +61,6 @@ We swept EfficientSU2 circular circuits on stock Qiskit 2.3.1 at `optimization_l
 
 The same issue applies to **chain (linear) circuits**: while not involving odd cycles, they suffer similar SABRE layout quality issues because SABRE lacks circuit-aware starting positions.
 
-### Other SDKs
-
-QPanda3 does not use VF2 — it goes directly to SABRE-style heuristic routing, which is why it doesn't suffer the 100s timeout. However, QPanda3 produces more 2Q gates on constrained topologies (597 vs 300 for circSU2_100). No quantum SDK we examined (QPanda3, QPanda-2, Qiskit) has explicit handling for the bipartite/odd-cycle case.
-
 ## 4. Fix: Two Changes to Qiskit Core
 
 ### Change 1: VF2Layout Early Exit (Python)
