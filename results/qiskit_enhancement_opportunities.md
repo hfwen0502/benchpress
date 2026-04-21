@@ -102,7 +102,7 @@ SABRE's heuristic scores SWAP candidates based on distance to the next few gates
 
 ### 5.3 Compute-Then-Apply Refactoring (Done)
 
-Refactored `Optimize1qGatesDecomposition`, `CommutationAnalysis`, and `ConsolidateBlocks`
+Refactored [`Optimize1qGatesDecomposition`](https://github.com/hfwen0502/qiskit/blob/fdd061ef6/crates/transpiler/src/passes/optimize_1q_gates_decomposition.rs), [`CommutationAnalysis`](https://github.com/hfwen0502/qiskit/blob/c5228537e/crates/transpiler/src/passes/commutation_analysis.rs), and [`ConsolidateBlocks`](https://github.com/hfwen0502/qiskit/blob/ea4abc77c/crates/transpiler/src/passes/consolidate_blocks.rs)
 to separate read-only computation from DAG mutation. The original code interleaved reads
 and writes; the refactored code batches all reads first, then applies all mutations.
 This improves CPU cache behavior on the DAG's graph data structure.
@@ -114,8 +114,9 @@ current gains).
 remote 160-vCPU server. Speedup is identical with rayon on or off — the gain comes
 from memory access patterns, not threading.
 
-**Details**: See `investigation/parallel_optimization_passes.md` in the Qiskit fork,
-branch `parallel-optimization-passes`.
+**Details**: See [`investigation/parallel_optimization_passes.md`](https://github.com/hfwen0502/qiskit/blob/parallel-optimization-passes/investigation/parallel_optimization_passes.md) in the Qiskit fork,
+branch [`parallel-optimization-passes`](https://github.com/hfwen0502/qiskit/tree/parallel-optimization-passes)
+([full diff](https://github.com/hfwen0502/qiskit/compare/03c640f73...ea4abc77c)).
 
 ### 5.4 BLAS Backend for Large Unitary Operations
 
