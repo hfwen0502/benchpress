@@ -100,11 +100,22 @@ SABRE's heuristic scores SWAP candidates based on distance to the next few gates
 
 **Expected impact**: Potentially large for structured circuits. Risk of regression on unstructured circuits.
 
-### 5.3 Pass-Level Parallelism
+### 5.3 Compute-Then-Apply Refactoring (Done)
 
-The pass manager executes passes sequentially within each stage. The existing `num_processes` parameter only parallelizes across multiple circuits, not within a single circuit. Independent passes (e.g., `RemoveIdentityEquivalent` and `Optimize1qGatesDecomposition`) could run in parallel.
+Refactored `Optimize1qGatesDecomposition`, `CommutationAnalysis`, and `ConsolidateBlocks`
+to separate read-only computation from DAG mutation. The original code interleaved reads
+and writes; the refactored code batches all reads first, then applies all mutations.
+This improves CPU cache behavior on the DAG's graph data structure.
 
-**Expected impact**: Limited for small circuits. Potentially significant for very large circuits (1000+ qubits) where individual passes take seconds.
+Also added rayon parallelism (ready for future large circuits, but not the source of
+current gains).
+
+**Result**: 15-30% speedup on 50-100 qubit circuits, confirmed on both local Mac and
+remote 160-vCPU server. Speedup is identical with rayon on or off — the gain comes
+from memory access patterns, not threading.
+
+**Details**: See `investigation/parallel_optimization_passes.md` in the Qiskit fork,
+branch `parallel-optimization-passes`.
 
 ### 5.4 BLAS Backend for Large Unitary Operations
 
@@ -126,7 +137,7 @@ Qiskit's Rust code uses pure-Rust linear algebra (ndarray, nalgebra). The `blas`
 | 6 | Redundant Depth/Size removal | No improvement | ~1%, too small |
 | 7 | Incremental SABRE extended set | Requires Rust changes | ~7% time savings |
 | 8 | Structure-aware SABRE scoring | Requires Rust changes | Potentially large |
-| 9 | Pass-level parallelism | Requires architecture changes | Significant at 1000+ qubits |
+| 9 | Compute-then-apply refactoring | **Done** (Qiskit fork) | 15-30% on large circuits |
 | 10 | BLAS backend for unitaries | Requires build changes | Small for typical circuits |
 
 ## Files
